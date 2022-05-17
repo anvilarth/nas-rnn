@@ -29,8 +29,6 @@ def compute_te_nas(model, dataloader, criterion, batch_size):
             if p.grad is not None:
                 grad.append(p.grad.view(-1).detach().cpu())
 
-
-
         k += 1
         matrix.append(torch.cat(grad))
         hidden = repackage_hidden(hidden)
