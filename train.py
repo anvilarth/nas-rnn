@@ -66,6 +66,6 @@ for log_name in tqdm.tqdm(logs[:100]):
     res_gradnorm = compute_norm_score(gpu, model, criterion, batch_size=args.eval_batch_size, batch_len=50)
 
     results = {'zenas': res_zenas, 'gradnorm': res_gradnorm} #'tenas': res_tenas
-    with open('/scratch/andrey/nas/nas-rnn/logs/' + log_name.split('/')[-1], 'w') as f:
+    with open('logs/' + log_name.split('/')[-1], 'w') as f:
         json.dump(results, f)
 
