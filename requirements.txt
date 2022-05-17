@@ -2,3 +2,6 @@ torch
 numpy
 tqdm
 networkx
+matplotlib
+seaborn
+scipy
