@@ -5,7 +5,7 @@ import torch.utils.data
 import torch.nn.functional as F
 
 import sys 
-sys.path.append('/scratch/andrey/nas/nas-bench-nlp-release')
+sys.path.append('./nas-bench-nlp-release')
 
 from splitcross import SplitCrossEntropyLoss
 
@@ -23,15 +23,18 @@ import data
 import os
 from utils import batchify
 from argparse import Namespace
-from model import AWDRNNModel
+from my_model import AWDRNNModel
 import datetime
 from utils import get_batch, repackage_hidden
 
-logs = sorted(glob.glob('/scratch/andrey/nas/nas-bench-nlp-release/train_logs_multi_runs/*.json'))
-for log_name in logs[:10]:
+logs = sorted(glob.glob('./logs_folder/*.json'))
+for log_name in tqdm.tqdm(logs[:100]):
     log = json.load(open(log_name, 'r'))
     args = Namespace(**log)
-    args.data = '/scratch/andrey/nas/nas-bench-nlp-release/ptb'
+    if log['status'] != "OK":
+        continue
+
+    args.data = './data/ptb'
 
     corpus = data.Corpus(args.data)
     cuda = 'cuda:0'
@@ -58,11 +61,11 @@ for log_name in logs[:10]:
     criterion = SplitCrossEntropyLoss(args.emsize, splits=[], verbose=False)
     # prefetch = [get_batch(train_eval_data, 0, args, evaluation=True) for i in range(0, 100, args.bptt)]
     prefetch = [get_batch(train_eval_data, 0, args, evaluation=True) for i in range(0, train_eval_data.size(0) - 1, args.bptt)]
-    res_tenas = compute_te_nas(model, prefetch, criterion, args.eval_batch_size)
+    # res_tenas = compute_te_nas(model, prefetch, criterion, args.eval_batch_size)
     res_zenas = compute_ze_nas(gpu, model, batch_size=args.eval_batch_size, repeat=1, mixup_gamma=0.1, batch_len=50, fp16=False)['avg_nas_score']
     res_gradnorm = compute_norm_score(gpu, model, criterion, batch_size=args.eval_batch_size, batch_len=50)
 
-    results = {'tenas': res_tenas, 'zenas': res_zenas, 'gradnorm': res_gradnorm}
+    results = {'zenas': res_zenas, 'gradnorm': res_gradnorm} #'tenas': res_tenas
     with open('/scratch/andrey/nas/nas-rnn/logs/' + log_name.split('/')[-1], 'w') as f:
         json.dump(results, f)
 
