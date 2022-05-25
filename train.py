@@ -28,7 +28,7 @@ import datetime
 from utils import get_batch, repackage_hidden
 
 logs = sorted(glob.glob('./logs_folder/*.json'))
-for log_name in tqdm.tqdm(logs[:100]):
+for log_name in tqdm.tqdm(logs[:200]):
     log = json.load(open(log_name, 'r'))
     args = Namespace(**log)
     if log['status'] != "OK":
