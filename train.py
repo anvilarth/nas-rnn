@@ -60,12 +60,12 @@ for log_name in tqdm.tqdm(logs[:100]):
     gpu = 0
     criterion = SplitCrossEntropyLoss(args.emsize, splits=[], verbose=False)
     # prefetch = [get_batch(train_eval_data, 0, args, evaluation=True) for i in range(0, 100, args.bptt)]
-    prefetch = [get_batch(train_eval_data, 0, args, evaluation=True) for i in range(0, train_eval_data.size(0) - 1, args.bptt)]
-    # res_tenas = compute_te_nas(model, prefetch, criterion, args.eval_batch_size)
+    prefetch = [get_batch(train_eval_data, 0, args, evaluation=True) for i in range(0, train_eval_data.size(0) - 1, args.bptt)][:10]
+    res_tenas, trace_metric = compute_te_nas(model, prefetch, criterion, args.eval_batch_size)
     res_zenas = compute_ze_nas(gpu, model, batch_size=args.eval_batch_size, repeat=1, mixup_gamma=0.1, batch_len=50, fp16=False)['avg_nas_score']
     res_gradnorm = compute_norm_score(gpu, model, criterion, batch_size=args.eval_batch_size, batch_len=50)
 
-    results = {'zenas': res_zenas, 'gradnorm': res_gradnorm} #'tenas': res_tenas
+    results = {'zenas': res_zenas, 'gradnorm': res_gradnorm, 'tenas': res_tenas, 'trace': trace_metric}
     with open('logs/' + log_name.split('/')[-1], 'w') as f:
         json.dump(results, f)
 

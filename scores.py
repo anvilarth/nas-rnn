@@ -12,14 +12,14 @@ def reset_model(model):
         if hasattr(layer, 'reset_parameters'):
             layer.reset_parameters()
 
-def compute_te_nas(model, dataloader, criterion, batch_size):
+def compute_te_nas_and_trace(model, dataloader, criterion, batch_size):
     # TODO Remove batch number dependency check out NTK
     model.eval()
     model.zero_grad()
     matrix = []
     hidden = model.init_hidden(batch_size)
     k = 0
-    for data, targets in tqdm.tqdm(dataloader):
+    for data, targets in dataloader:
         output, hidden = model(data, hidden)
         loss = criterion(model.decoder.weight, model.decoder.bias, output, targets)
         loss.backward()
@@ -36,10 +36,14 @@ def compute_te_nas(model, dataloader, criterion, batch_size):
     
     tensor_matrix = torch.stack(matrix, dim=0) / k
     ntk = torch.einsum('nc,mc->nm', [tensor_matrix, tensor_matrix])
-
-    eigenvalues, _ = torch.symeig(ntk)  # ascending
-    conds = np.nan_to_num((eigenvalues[-1] / eigenvalues[0]).item(), copy=True, nan=100000.0)
-    return conds
+    m = ntk.shape[0]
+    trace_metric = torch.sqrt(torch.trace(ntk) / m) 
+    try:
+        eigenvalues, _ = torch.symeig(ntk)  # ascending
+        conds = np.nan_to_num((eigenvalues[-1] / eigenvalues[0]).item(), copy=True, nan=100000.0)
+    except:
+        conds = 0.0
+    return conds, trace_metric
 
 
 def compute_ze_nas(gpu, model, batch_size, repeat=1, mixup_gamma=0.1, batch_len=50, fp16=False):
